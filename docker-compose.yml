@@ -1,0 +1,98 @@
+version: '3.6'
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+services:
+  mysql:
+    build:
+      context: ./mysql
+      args:
+        - MYSQL_VERSION=${MYSQL_VERSION:-5.7}
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-satcompany}
+      MYSQL_USER: ${MYSQL_USER:-getrak}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-getrak}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_ROOT_HOST: "%"
+      TZ: ${WORKSPACE_TIMEZONE:-America/Sao_Paulo}}
+    volumes:
+      - ${DATA_PATH_HOST}/mysql:/var/lib/mysql
+    ports:
+      - "${MYSQL_PORT:-3306}:3306/tcp"
+    networks:
+      backend:
+        aliases:
+          - mysqlserver
+
+  redis:
+    build:
+      context: ./redis
+      args:
+        - REDIS_VERSION=${REDIS_VERSION:-5}
+    restart: unless-stopped
+    volumes:
+      - ${DATA_PATH_HOST}/redis:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379/tcp"
+    networks:
+      backend:
+        aliases:
+          - redisserver
+  # Dados
+  pyspark:
+    image: jupyter/pyspark-notebook
+    command: ["jupyter", "notebook", "--allow-root", "--NotebookApp.token=''"]
+    user: root
+    environment:
+      PYSPARK_SUBMIT_ARGS: '--master local[*] pyspark-shell --conf spark.ui.port: 4040'
+      MYSQL_USER: ${MYSQL_USER:-getrak}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-getrak}
+      MYSQL_HOST: mysql
+
+      APP_NAME: PYSPARK
+      GRANT_SUDO: "yes"
+
+      DATA: ${DATA:-2020-07-02}
+    volumes:
+      - ${APP_CODE_PATH_HOST}/notebooks:/home/jovyan/work
+    ports:
+      - "${PYSPARK_PORT:-8888}:8888/tcp"
+    depends_on:
+      - mysql
+      - redis
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - backend
+
+  airflow:
+    image: apache/airflow
+    entrypoint: ["./start.sh"]
+    volumes:
+      - ${APP_CODE_PATH_HOST}/airflow/start.sh:/opt/airflow/start.sh
+      - ${APP_CODE_PATH_HOST}/airflow/requirements.txt:/opt/airflow/requirements.txt
+      - ${APP_CODE_PATH_HOST}/airflow/dags:/opt/airflow/dags
+      - /usr/bin/docker:/usr/bin/docker:z
+      - /var/run/docker.sock:/var/run/docker.sock:z
+    ports:
+      - "${AIRFLOW_PORT:-8081}:8080/tcp"
+    networks:
+      - backend
+
+  dremio:
+    image: dremio/dremio-oss
+    volumes:
+      - ${DATA_PATH_HOST}/dremio:/opt/dremio/data
+    ports:
+      - "${DREMIO_UI_PORT:-9047}:9047/tcp"
+      - "${DREMIO_JDBC_PORT:-31010}:31010/tcp"
+      - "${DREMIO_ZOOKEPER_PORT:-2181}:2181/tcp"
+      - "${DREMIO_INTERNAL_PORT:-45678}:45678/tcp"
+    networks:
+      - backend
