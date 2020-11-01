@@ -1,6 +1,6 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/python,redis,jupyternotebooks
-# Edit at https://www.toptal.com/developers/gitignore?templates=python,redis,jupyternotebooks
+# Created by https://www.toptal.com/developers/gitignore/api/python,redis,jupyternotebooks,vscode
+# Edit at https://www.toptal.com/developers/gitignore?templates=python,redis,jupyternotebooks,vscode
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
@@ -158,4 +158,12 @@ dmypy.json
 
 *.rdb
 
-# End of https://www.toptal.com/developers/gitignore/api/python,redis,jupyternotebooks
+### vscode ###
+**/.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# End of https://www.toptal.com/developers/gitignore/api/python,redis,jupyternotebooks,vscode

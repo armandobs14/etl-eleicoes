@@ -1,3 +1,4 @@
+import json
 import redis
 import datetime
 from airflow import DAG
@@ -20,6 +21,7 @@ default_args = {
         'retry_delay'           : timedelta(seconds=30)
 }
 
+host = Variable.get("host")
 index_path = Variable.get("index_path")
 dados_path = Variable.get("dados_path")
 eleicao = Variable.get("eleicao")
@@ -27,9 +29,8 @@ ufs = Variable.get("ufs", deserialize_json=True)
 
 def download_index(**kwargs):
   files = []
-  # Download and creating file list
   for uf in ufs:
-    path = index_path.format(eleicao=eleicao, uf=uf)
+    path = index_path.format(host=host, eleicao=eleicao, uf=uf)
     try:
       response = requests.get(path).json()  
       files += map(lambda arq: {
@@ -53,8 +54,9 @@ def filter_by_date_task(**kwargs):
   ti = kwargs['ti']
 
   files = ti.xcom_pull(task_ids='filter_variable_files_task')
-  files = [file for file in files if r.get(file['nm']) != file['dh']]
-  return files
+  for file in files:
+    if r.get(file['nm']) != file['dh'].encode('utf-8'):
+      r.publish('files',json.dumps(file))
 
 
 with DAG('eleicao_dag', default_args=default_args, schedule_interval="5 * * * *", catchup=False) as dag:
