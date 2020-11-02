@@ -21,6 +21,7 @@ services:
   client:
     build:
       context: ./client
+    env_file: .env
     volumes:
       - html-volume:/tmp/nginx/
     networks:
