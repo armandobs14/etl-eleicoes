@@ -10,3 +10,7 @@ Abaixo temos as aplicações utilizadas na solução e a motivação para cada u
   - PubSub
 - Mysql
   - Armazenar resultados finais
+- Client
+  - Script python responsável por baixar arquivos do TSE
+- Nginx
+  - Serve os arquivos localmente
