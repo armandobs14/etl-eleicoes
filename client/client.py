@@ -1,3 +1,4 @@
+import os
 import json
 import redis
 import requests
@@ -5,8 +6,8 @@ import requests
 r = redis.Redis(host='redis', port=6379, db=0)
 p = r.pubsub()
 
-host = "palmaresfestlive.com.br"
-eleicao = 8707
+host = os.environ['HOST']
+eleicao = os.environ['ELEICAO']
 data_path = "https://{host}/ele2020/divulgacao/simulado/{eleicao}/dados/{arquivo}"
 
 def download_file(url):
