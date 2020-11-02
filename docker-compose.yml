@@ -1,5 +1,8 @@
 version: '3.6'
 
+volumes:
+  html-volume:
+
 networks:
   frontend:
     driver: bridge
@@ -7,6 +10,22 @@ networks:
     driver: bridge
 
 services:
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+        - 80:80
+    volumes:
+        - html-volume:/usr/share/nginx/html/
+
+  client:
+    build:
+      context: ./client
+    volumes:
+      - html-volume:/tmp/nginx/
+    networks:
+      - backend
+
   mysql:
     build:
       context: ./mysql
@@ -45,6 +64,7 @@ services:
           - redisserver
   # Dados
   pyspark:
+    user: "${UID}:${GID}"
     image: jupyter/pyspark-notebook
     command: ["jupyter", "notebook", "--allow-root", "--NotebookApp.token=''"]
     user: root
@@ -86,6 +106,7 @@ services:
       - backend
 
   dremio:
+    user: "${UID}:${GID}"
     image: dremio/dremio-oss
     volumes:
       - ${DATA_PATH_HOST}/dremio:/opt/dremio/data

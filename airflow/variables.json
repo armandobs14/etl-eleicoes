@@ -2,7 +2,7 @@
   "host": "api",
   "eleicao": 8707,
   "index_path": "https://{host}/ele2020/divulgacao/simulado/{eleicao}/config/{uf}/{uf}-e00{eleicao}-i.json",
-  "dados_path": "https://{host}/ele2020/divulgacao/simulado/{eleicao}/dados/{uf}/{arquivo}",
+  "dados_path": "https://{host}/ele2020/divulgacao/simulado/{eleicao}/dados/{arquivo}",
   "ufs": [
     "ac",
     "al",
