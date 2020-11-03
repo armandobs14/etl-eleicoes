@@ -62,7 +62,7 @@ def filter_by_date_task(**kwargs):
 with DAG('eleicao_dag', default_args=default_args, schedule_interval="*/18 * * * *", catchup=False) as dag:
   dummy_task = DummyOperator(task_id='dummy_task', retries=3)
   download_index = PythonOperator(
-        task_id='downloa8_index',
+        task_id='download_index',
         provide_context=True,
         python_callable=download_index,
         dag=dag,
