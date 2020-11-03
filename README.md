@@ -8,8 +8,6 @@ Abaixo temos as aplicações utilizadas na solução e a motivação para cada u
 - Redis
   - Cache
   - PubSub
-- Mysql
-  - Armazenar resultados finais
 - Client
   - Script python responsável por baixar arquivos do TSE
 - Nginx
