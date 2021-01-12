@@ -21,11 +21,13 @@ default_args = {
         'retry_delay'           : timedelta(seconds=30)
 }
 
-host = Variable.get("host")
-index_path = Variable.get("index_path")
-dados_path = Variable.get("dados_path")
-eleicao = Variable.get("eleicao")
-ufs = Variable.get("ufs", deserialize_json=True)
+# Importando config
+config = Variable.get("config", deserialize_json=True)
+host = config['host']
+index_path = config['index_path']
+dados_path = config['dados_path']
+eleicao = config['eleicao']
+ufs = config['ufs']
 
 def download_index(**kwargs):
   files = []
