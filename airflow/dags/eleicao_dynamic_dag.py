@@ -1,11 +1,9 @@
-import json
-import redis
-import datetime
-from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.contrib.hooks.redis_hook import RedisHook
 from datetime import datetime, timedelta
 from airflow.models import Variable
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow import DAG
 import requests
 import json
 
@@ -16,6 +14,8 @@ index_path = config['index_path']
 dados_path = config['dados_path']
 eleicao = config['eleicao']
 ufs = config['ufs']
+
+redis_hook = RedisHook()
 
 default_args = {
     'owner': 'airflow',
@@ -28,26 +28,21 @@ default_args = {
     'retry_delay': timedelta(seconds=30)
 }
 
-with DAG('eleicao_dynamic_dag', default_args=default_args, schedule_interval="*/18 * * * *", catchup=False) as dag:
-
-    def print_kwargs(**kwargs):
-        params = kwargs['params']
-        print('Params are: {}'.format(params))
-
-    def download_index(**kwargs):
-        files = []
+def download_index(**kwargs):
+        redis = redis_hook.get_conn()
         path = index_path.format(host=host, eleicao=eleicao, uf=kwargs['uf'])
-        try:
-            response = requests.get(path).json()
-            files += map(lambda arq: {
+        response = requests.get(path).json()
+
+        for arq in response['arq']:
+            file = {
                 "nm": f"{response['cdabr'].lower()}/{arq['nm']}",
                 "dh": arq['dh']
-            }, response['arq'])
-        except:
-            print(path)
-            pass
-        return files
+            }
+            if redis.get(file['nm']) !=  file['dh'].encode('utf-8'):
+                redis.publish('files',json.dumps(file))
 
+with DAG('eleicao_dynamic_dag', default_args=default_args, schedule_interval="*/18 * * * *", catchup=False) as dag:
+    
     for uf in ufs:
         download_index_task = PythonOperator(
             task_id=f"dados_eleitorais_{uf}",
@@ -57,14 +52,3 @@ with DAG('eleicao_dynamic_dag', default_args=default_args, schedule_interval="*/
                 'uf': uf
             },
             dag=dag)
-        
-        kwargs_task = PythonOperator(
-            task_id=f"kwargs_{uf}",
-            python_callable=print_kwargs,
-            provide_context=True,
-            op_kwargs={
-                'params': uf
-            },
-            dag=dag)
-        
-        download_index_task >> kwargs_task

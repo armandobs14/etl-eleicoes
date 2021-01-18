@@ -1,2 +1,4 @@
 docker
+psycopg2-binary
 apache-airflow[docker]
+apache-airflow[postgres]

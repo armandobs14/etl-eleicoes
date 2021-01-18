@@ -1,4 +1,5 @@
 #!/bin/bash
+python -m pip install --upgrade pip
 pip uninstall docker docker-py
 pip install --user -r requirements.txt
 airflow db upgrade

@@ -1,7 +1,7 @@
 version: '3.6'
 
 volumes:
-  html-volume:
+  dados-eleicao:
 
 networks:
   frontend:
@@ -10,15 +10,30 @@ networks:
     driver: bridge
 
 services:
+  postgres:
+    image: "postgres"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-airflow}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-airflow}
+      - POSTGRES_DB=${POSTGRES_DB:-airflow}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    security_opt:
+      - label:disable
+    volumes:
+      - ${DATA_PATH_HOST}/postgres:/var/lib/postgresql/data
+
   nginx:
     build:
       context: ./nginx
     ports:
         - 8000:80
+    security_opt:
+      - label:disable
     volumes:
-        - html-volume:/usr/share/nginx/html/dados/
-        - ${APP_CODE_PATH_HOST}/nginx/default.conf:/etc/nginx/conf.d/default.conf:Z
-        - ${APP_CODE_PATH_HOST}/nginx/nginx.conf:/etc/nginx/nginx.conf:Z
+        - dados-eleicao:/usr/share/nginx/html/dados/
+        - ${APP_CODE_PATH_HOST}/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        - ${APP_CODE_PATH_HOST}/nginx/nginx.conf:/etc/nginx/nginx.conf
 
   client:
     build:
@@ -28,8 +43,10 @@ services:
       - airflow
       - redis
       - nginx
+    security_opt:
+      - label:disable
     volumes:
-      - html-volume:/tmp/nginx/
+      - dados-eleicao:/tmp/nginx/
     networks:
       - backend
 
@@ -39,8 +56,10 @@ services:
       args:
         - REDIS_VERSION=${REDIS_VERSION:-5}
     restart: unless-stopped
+    security_opt:
+      - label:disable
     volumes:
-      - ${DATA_PATH_HOST}/redis:/data:Z
+      - ${DATA_PATH_HOST}/redis:/data
     ports:
       - "${REDIS_PORT:-6379}:6379/tcp"
     networks:
@@ -51,15 +70,17 @@ services:
   airflow:
     image: apache/airflow
     entrypoint: ["./start.sh"]
+    security_opt:
+      - label:disable
     volumes:
-      - ${APP_CODE_PATH_HOST}/airflow/airflow.cfg:/opt/airflow/airflow.cfg:Z
-      - ${APP_CODE_PATH_HOST}/airflow/start.sh:/opt/airflow/start.sh:Z
-      - ${APP_CODE_PATH_HOST}/airflow/requirements.txt:/opt/airflow/requirements.txt:Z
-      - ${APP_CODE_PATH_HOST}/airflow/dags:/opt/airflow/dags:Z
-      - /usr/bin/docker:/usr/bin/docker
-      - /var/run/docker.sock:/var/run/docker.sock:Z
+      - ${DATA_PATH_HOST}/airflow:/opt/airflow:Z
+      - ${APP_CODE_PATH_HOST}/airflow/dags:/opt/airflow/dags
+      - ${APP_CODE_PATH_HOST}/airflow/start.sh:/opt/airflow/start.sh
+      - ${APP_CODE_PATH_HOST}/airflow/requirements.txt:/opt/airflow/requirements.txt
+      
     depends_on:
       - redis
+      - postgres
     ports:
       - "${AIRFLOW_PORT:-8081}:8080/tcp"
     networks:

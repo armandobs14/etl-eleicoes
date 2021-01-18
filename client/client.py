@@ -10,11 +10,17 @@ host = os.environ['HOST']
 eleicao = os.environ['ELEICAO']
 data_path = "https://{host}/ele2020/divulgacao/simulado/{eleicao}/dados/{arquivo}"
 
+
+for format in ['json','sig','cer']:
+    path = f"/tmp/nginx/{format}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 def download_file(url):
     r = requests.get(url)
     file_name = url.split('/')[-1]
-    print(f"saving {file_name}")
-    with open(f"/tmp/nginx/{file_name}", 'wb') as f:
+    extension = file_name.split('.')[-1]
+    with open(f"/tmp/nginx/{extension}/{file_name}", 'wb') as f:
         f.write(r.content)
 
 def custom_handler(message):
